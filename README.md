@@ -1,4 +1,8 @@
-# `pygsvd.py`
+# `pygensvd.py`
+
+An update version of the original pygsvd package by Benjamin Naecker. This version
+uses cmake for compilation rather than distutils, and supports both the standard
+LAPACK bindings and those provided by Intel's Math Kernel Library (MKL).
 
 A Python wrapper to the LAPACK generalized singular value decomposition.
 

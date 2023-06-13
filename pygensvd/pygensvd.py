@@ -1,5 +1,5 @@
 import numpy as np
-import _gsvd
+from . import _gsvd
 
 
 def gsvd(A, B, full_matrices=False, extras="uv"):

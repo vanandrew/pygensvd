@@ -8,12 +8,16 @@ set(CMAKE_C_STANDARD 17)
 project(omni LANGUAGES C)
 
 # find python 3.10 > 3.7
-find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development NumPy)
+find_package(Python 3.11 REQUIRED NumPy)
+
 
 # find LAPACK and BLAS (Use static linkage)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(BLA_STATIC ON)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+set(LAPACKE_STATIC TRUE)
+find_package(LAPACKE REQUIRED)
 
 # add pygensvd library
 Python_add_library(
@@ -50,7 +54,6 @@ if(BLAS_LIBRARIES MATCHES "(mkl)")
         PRIVATE
         ${MKL_INCLUDE_DIRECTORY}
     )
-
 else()
     target_compile_definitions(
         _gsvd
@@ -58,6 +61,16 @@ else()
         USE_LAPACK
     )
 endif()
+target_include_directories(
+    _gsvd
+    PRIVATE
+    ${LAPACKE_INCLUDE_DIRS_DEP}
+)
+target_link_libraries(
+    _gsvd
+    PRIVATE
+    ${LAPACKE_LIBRARIES_DEP}
+)
 
 # install library
 install(

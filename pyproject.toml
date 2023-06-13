@@ -13,7 +13,7 @@ urls = { github = "https://github.com/vanandrew/pygensvd" }
 version = "0.0.1"
 
 [build-system]
-requires = ["setuptools", "wheel", "cmake", "cmake-setuptools-ext"]
+requires = ["setuptools", "wheel", "cmake", "cmake-setuptools-ext", "numpy"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
