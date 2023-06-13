@@ -13,11 +13,35 @@ find_package(Python 3.11 REQUIRED NumPy)
 
 # find LAPACK and BLAS (Use static linkage)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
+
+# first search for MKL
+set(BLA_VENDOR Intel10_64ilp)
 set(BLA_STATIC ON)
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
+find_package(BLAS)
+find_package(LAPACK)
 set(LAPACKE_STATIC TRUE)
-find_package(LAPACKE REQUIRED)
+find_package(LAPACKE)
+
+# if we didn't find MKL
+# then search for OpenBLAS
+if (NOT BLAS_FOUND)
+    set(BLA_VENDOR OpenBLAS)
+    set(BLA_STATIC ON)
+    find_package(BLAS)
+    find_package(LAPACK)
+    set(LAPACKE_STATIC TRUE)
+    find_package(LAPACKE)
+endif()
+
+# if we didn't find OpenBLAS
+# then search for everything else
+if (NOT BLAS_FOUND)
+    set(BLA_STATIC ON)
+    find_package(BLAS REQUIRED)
+    find_package(LAPACK REQUIRED)
+    set(LAPACKE_STATIC TRUE)
+    find_package(LAPACKE REQUIRED)
+endif()
 
 # add pygensvd library
 Python_add_library(
