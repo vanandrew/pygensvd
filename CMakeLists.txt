@@ -8,38 +8,40 @@ set(CMAKE_C_STANDARD 17)
 project(omni LANGUAGES C)
 
 # find python 3.10 > 3.7
-find_package(Python 3.11 REQUIRED NumPy)
-
+exec_program(${PYTHON_EXECUTABLE} ARGS "-c \"import sys; print('.'.join(map(str, sys.version_info[:2])))\"" OUTPUT_VARIABLE PYTHON_VERSION)
+find_package(Python ${PYTHON_VERSION} EXACT REQUIRED NumPy)
 
 # find LAPACK and BLAS (Use static linkage)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 
 # first search for MKL
 set(BLA_VENDOR Intel10_64ilp)
-set(BLA_STATIC ON)
+
+# set(BLA_STATIC ON)
+# set(LAPACKE_STATIC TRUE)
 find_package(BLAS)
-find_package(LAPACK)
-set(LAPACKE_STATIC TRUE)
-find_package(LAPACKE)
+
+if(BLAS_FOUND)
+    find_package(LAPACK REQUIRED)
+    find_package(LAPACKE REQUIRED)
+endif()
 
 # if we didn't find MKL
 # then search for OpenBLAS
-if (NOT BLAS_FOUND)
+if(NOT BLAS_FOUND)
     set(BLA_VENDOR OpenBLAS)
-    set(BLA_STATIC ON)
     find_package(BLAS)
-    find_package(LAPACK)
-    set(LAPACKE_STATIC TRUE)
-    find_package(LAPACKE)
+
+    if(BLAS_FOUND)
+        find_package(LAPACK REQUIRED)
+        find_package(LAPACKE REQUIRED)
+    endif()
 endif()
 
-# if we didn't find OpenBLAS
 # then search for everything else
-if (NOT BLAS_FOUND)
-    set(BLA_STATIC ON)
+if(NOT BLAS_FOUND)
     find_package(BLAS REQUIRED)
     find_package(LAPACK REQUIRED)
-    set(LAPACKE_STATIC TRUE)
     find_package(LAPACKE REQUIRED)
 endif()
 
@@ -85,15 +87,16 @@ else()
         USE_LAPACK
     )
 endif()
+
 target_include_directories(
     _gsvd
     PRIVATE
-    ${LAPACKE_INCLUDE_DIRS_DEP}
+    ${LAPACKE_INCLUDE_DIRS}
 )
 target_link_libraries(
     _gsvd
     PRIVATE
-    ${LAPACKE_LIBRARIES_DEP}
+    ${LAPACKE_LIBRARIES}
 )
 
 # install library

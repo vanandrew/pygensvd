@@ -1,6 +1,6 @@
 import os
 import itertools
-import pygensvd.pygensvd as pygensvd
+from pygensvd import gsvd
 import numpy as np
 import pytest
 
@@ -20,7 +20,7 @@ def test_square_matrices():
     from them.
     """
     matrices = _load_matrices("square")
-    outputs = pygensvd.gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
+    outputs = gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
     for xin, xout in zip(matrices[2:], outputs):
         assert np.allclose(np.abs(xin), np.abs(xout))
     c, s, x, u, v = outputs
@@ -37,7 +37,7 @@ def test_nonsquare_matrices():
     It also verifies the reconstruction
     """
     matrices = _load_matrices("nonsquare")
-    outputs = pygensvd.gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
+    outputs = gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
     max_size = matrices[0].shape[1]
     c, s, x, u, v = outputs
     for xin, xout in zip(matrices[2:4], (c, s)):
@@ -56,7 +56,7 @@ def test_rank_deficient_matrices():
     to the trailing columns.
     """
     matrices = _load_matrices("rank-deficient")
-    outputs = pygensvd.gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
+    outputs = gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
     for xin, xout in zip(matrices[2:], outputs):
         assert np.allclose(np.abs(xin), np.abs(xout))
     c, s, x, u, v = outputs
@@ -67,7 +67,7 @@ def test_rank_deficient_matrices():
 def test_large_matrices():
     """Test the correctness of the routine on larger matrices."""
     matrices = _load_matrices("large")
-    c, s, x, u, v = pygensvd.gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
+    c, s, x, u, v = gsvd(matrices[0], matrices[1], full_matrices=True, extras="uv")
     assert np.allclose(u.dot(np.diag(c)).dot(x.T), matrices[0])
     assert np.allclose(v.dot(np.diag(s)).dot(x.T), matrices[1])
 
@@ -77,7 +77,7 @@ def test_same_columns():
     have a different number of columns.
     """
     with pytest.raises(ValueError):
-        pygensvd.gsvd(np.arange(10).reshape(5, 2), np.arange(10).reshape(2, 5))
+        gsvd(np.arange(10).reshape(5, 2), np.arange(10).reshape(2, 5))
 
 
 def test_dimensions():
@@ -85,9 +85,9 @@ def test_dimensions():
     to 2D), and raises a ValueError for 3+D arrays.
     """
     x = np.arange(10)
-    pygensvd.gsvd(x, x)
+    gsvd(x, x)
     with pytest.raises(ValueError):
-        pygensvd.gsvd(x.reshape(5, 2, 1), x.reshape(5, 2, 1))
+        gsvd(x.reshape(5, 2, 1), x.reshape(5, 2, 1))
 
 
 def test_non_full_matrices():
@@ -98,12 +98,12 @@ def test_non_full_matrices():
     full square matrices.
     """
     a, b = _load_matrices("nonsquare")[:2]
-    c, s, x, u, v = pygensvd.gsvd(a, b, full_matrices=True, extras="uv")
+    c, s, x, u, v = gsvd(a, b, full_matrices=True, extras="uv")
     assert x.shape == (a.shape[1], a.shape[1])
     assert u.shape == (a.shape[0], a.shape[0])
     assert v.shape == (b.shape[0], b.shape[0])
 
-    c, s, x, u, v = pygensvd.gsvd(a, b, extras="uv")
+    c, s, x, u, v = gsvd(a, b, extras="uv")
     assert x.shape == (a.shape[1], a.shape[1])
     assert u.shape == (a.shape[0], a.shape[1])
     assert v.shape == (b.shape[0], b.shape[1])
@@ -124,7 +124,7 @@ def test_return_extras():
             ex = "".join(combo)
 
             # Compute GSVD including the extras, assigned to a dict
-            out = dict(zip(("c", "s", "r") + combo, pygensvd.gsvd(matrices["a"], matrices["b"], extras=ex)))
+            out = dict(zip(("c", "s", "r") + combo, gsvd(matrices["a"], matrices["b"], extras=ex)))
 
             # Compare each extra output to the expected
             for each in combo:
@@ -141,7 +141,7 @@ def test_complex():
     """
     a = np.loadtxt("square/a.txt")
     b = np.loadtxt("square/b.txt").astype(complex)
-    c, s, x, u, v = pygensvd.gsvd(a, b, full_matrices=True, extras="uv")
+    c, s, x, u, v = gsvd(a, b, full_matrices=True, extras="uv")
     assert c.dtype == np.double  # Singular values are always real
     assert s.dtype == np.double  # Singular values are always real
     for matrix in (x, u, v):
@@ -159,6 +159,6 @@ def test_dtype_promotion():
     a, b = _load_matrices("square")[:2]
     dtypes = (np.int16, np.int32, np.int64, np.float32)
     for dtype in dtypes:
-        outputs = pygensvd.gsvd(a.astype(dtype), b.astype(dtype))
+        outputs = gsvd(a.astype(dtype), b.astype(dtype))
         for out in outputs:
             assert out.dtype == np.double
