@@ -1,22 +1,23 @@
 import numpy as np
 import _gsvd
 
-def gsvd(A, B, full_matrices=False, extras='uv'):
-    '''Compute the generalized singular value decomposition of
+
+def gsvd(A, B, full_matrices=False, extras="uv"):
+    """Compute the generalized singular value decomposition of
     a pair of matrices ``A`` of shape ``(m, n)`` and ``B`` of
     shape ``(p, n)``
 
     The GSVD is defined as a joint decomposition, as follows.
-        
+
         A = U*C*X.T
         B = V*S*X.T
-    
+
     where
 
         C.T*C + S.T*S = I
 
     where ``U`` and ``V`` are unitary matrices.
-        
+
     Parameters
     ----------
     A, B : ndarray
@@ -28,8 +29,8 @@ def gsvd(A, B, full_matrices=False, extras='uv'):
         at most ``p`` columns and ``C`` and ``S`` are of length ``p``.
     extras : str, optional
         A string indicating which of the orthogonal transformation
-        matrices should be computed. By default, this only computes 
-        the generalized singular values in ``C`` and ``S``, and the 
+        matrices should be computed. By default, this only computes
+        the generalized singular values in ``C`` and ``S``, and the
         right generalized singular vectors in ``X``. The string may
         contain either 'u' or 'v' to indicate that the corresponding
         matrix is to be computed.
@@ -46,11 +47,11 @@ def gsvd(A, B, full_matrices=False, extras='uv'):
         The right generalized singular vectors of ``A`` and ``B``.
     U : ndarray
         The left generalized singular vectors of ``A``, with
-        shape ``(m, m)``. This is only returned if 
+        shape ``(m, m)``. This is only returned if
         ``'u' in extras`` is True.
     V : ndarray
         The left generalized singular vectors of ``B``, with
-        shape ``(p, p)``. This is only returned if 
+        shape ``(p, p)``. This is only returned if
         ``'v' in extras`` is True.
 
     Raises
@@ -76,31 +77,31 @@ def gsvd(A, B, full_matrices=False, extras='uv'):
     References
     ----------
     [1] Golub, G., and C.F. Van Loan, 2013, Matrix Computations, 4th Ed.
-    '''
+    """
     # The LAPACK routine stores R inside A and/or B, so we copy to
     # avoid modifying the caller's arrays.
     dtype = np.complex128 if any(map(np.iscomplexobj, (A, B))) else np.double
-    Ac = np.array(A, copy=True, dtype=dtype, order='C', ndmin=2)
-    Bc = np.array(B, copy=True, dtype=dtype, order='C', ndmin=2)
+    Ac = np.array(A, copy=True, dtype=dtype, order="C", ndmin=2)
+    Bc = np.array(B, copy=True, dtype=dtype, order="C", ndmin=2)
     m, n = Ac.shape
     p = Bc.shape[0]
-    if (n != Bc.shape[1]):
-        raise ValueError('A and B must have the same number of columns')
+    if n != Bc.shape[1]:
+        raise ValueError("A and B must have the same number of columns")
 
     # Allocate input arrays to LAPACK routine
-    compute_uv = tuple(each in extras for each in 'uv')
+    compute_uv = tuple(each in extras for each in "uv")
     sizes = (m, p)
-    U, V = (np.zeros((size, size), dtype=dtype) if compute 
-            else np.zeros((1, 1), dtype=dtype)
-            for size, compute in zip(sizes, compute_uv))
+    U, V = (
+        np.zeros((size, size), dtype=dtype) if compute else np.zeros((1, 1), dtype=dtype)
+        for size, compute in zip(sizes, compute_uv)
+    )
     Q = np.zeros((n, n), dtype=dtype)
     C = np.zeros((n,), dtype=np.double)
     S = np.zeros((n,), dtype=np.double)
     iwork = np.zeros((n,), dtype=np.int32)
 
     # Compute GSVD via LAPACK wrapper, returning the effective rank
-    k, l = _gsvd.gsvd(Ac, Bc, U, V, Q, C, S, iwork,
-            compute_uv[0], compute_uv[1])
+    k, l = _gsvd.gsvd(Ac, Bc, U, V, Q, C, S, iwork, compute_uv[0], compute_uv[1])
 
     # Compute X
     R = _extract_R(Ac, Bc, k, l)
@@ -126,26 +127,24 @@ def gsvd(A, B, full_matrices=False, extras='uv'):
         if compute_uv[1]:
             V = V[:, :rank]
 
-    outputs = (C, S, X) + tuple(arr for arr, compute in 
-            zip((U, V), compute_uv) if compute)
+    outputs = (C, S, X) + tuple(arr for arr, compute in zip((U, V), compute_uv) if compute)
     return outputs
 
 
 def _extract_R(A, B, k, l):
-    '''Extract the diagonalized matrix R from A and/or B.
+    """Extract the diagonalized matrix R from A and/or B.
 
     The indexing performed here is taken from the LAPACK routine
     help, which can be found here:
 
     ``http://www.netlib.org/lapack/explore-html/d1/d7e/group__double_g_esing_gab6c743f531c1b87922eb811cbc3ef645.html#gab6c743f531c1b87922eb811cbc3ef645``
-    '''
+    """
     m, n = A.shape
     if (m - k - l) >= 0:
-        R = np.zeros((k+l, n), dtype=A.dtype)
-        R[:, (n-k-l):] = A[:k+l, n-k-l:n]
+        R = np.zeros((k + l, n), dtype=A.dtype)
+        R[:, (n - k - l) :] = A[: k + l, n - k - l : n]
     else:
         R = np.zeros((k + l, k + l), dtype=A.dtype)
         R[:m, :] = A
-        R[m:, m:] = B[(m-k):l, (n+m-k-l):]
+        R[m:, m:] = B[(m - k) : l, (n + m - k - l) :]
     return R
-

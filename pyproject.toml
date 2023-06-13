@@ -1,0 +1,21 @@
+[project]
+name = "pygensvd"
+description = "Python and NumPy extension module implementing the generalized signular value decomposition (GSVD)."
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "GNU License" }
+authors = [{ name = "Andrew Van", email = "vanandrew@wustl.edu" }]
+keywords = ["GSVD"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+]
+urls = { github = "https://github.com/vanandrew/pygensvd" }
+version = "0.0.1"
+
+[build-system]
+requires = ["setuptools", "wheel", "cmake", "cmake-setuptools-ext"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 120
+target-version = ['py37', 'py38', 'py39', 'py310']
