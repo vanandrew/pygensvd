@@ -11,10 +11,18 @@ classifiers = [
 ]
 urls = { github = "https://github.com/vanandrew/pygensvd" }
 version = "0.0.1"
+dependencies = [
+    "numpy >= 1.1"
+]
 
 [build-system]
 requires = ["setuptools", "wheel", "cmake", "cmake-setuptools-ext", "numpy"]
 build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = [
+    "pytest"
+]
 
 [tool.black]
 line-length = 120
