@@ -14,28 +14,14 @@ find_package(Python ${PYTHON_VERSION} EXACT REQUIRED NumPy)
 # find LAPACK and BLAS (Use static linkage)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 
-# first search for MKL
-set(BLA_VENDOR Intel10_64ilp)
-
-# set(BLA_STATIC ON)
-# set(LAPACKE_STATIC TRUE)
+# if we didn't find MKL
+# then search for OpenBLAS
+set(BLA_VENDOR OpenBLAS)
 find_package(BLAS)
 
 if(BLAS_FOUND)
     find_package(LAPACK REQUIRED)
     find_package(LAPACKE REQUIRED)
-endif()
-
-# if we didn't find MKL
-# then search for OpenBLAS
-if(NOT BLAS_FOUND)
-    set(BLA_VENDOR OpenBLAS)
-    find_package(BLAS)
-
-    if(BLAS_FOUND)
-        find_package(LAPACK REQUIRED)
-        find_package(LAPACKE REQUIRED)
-    endif()
 endif()
 
 # then search for everything else
@@ -59,6 +45,7 @@ target_link_libraries(
 )
 
 # check if this is an mkl library
+# THIS IS CURRENTLY NOT WORKING
 if(BLAS_LIBRARIES MATCHES "(mkl)")
     if(NOT DEFINED ENV{MKLROOT})
         message(
