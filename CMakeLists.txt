@@ -9,13 +9,19 @@ project(omni LANGUAGES C)
 
 # find python 3.10 > 3.7
 exec_program(${PYTHON_EXECUTABLE} ARGS "-c \"import sys; print('.'.join(map(str, sys.version_info[:2])))\"" OUTPUT_VARIABLE PYTHON_VERSION)
-find_package(Python ${PYTHON_VERSION} EXACT REQUIRED NumPy)
+find_package(Python ${PYTHON_VERSION} EXACT REQUIRED OPTIONAL_COMPONENTS NumPy)
+
+# if we couldn't find numpy with FindPython then try using the numpy module instead
+if(NOT Python_NumPy_FOUND)
+    message(STATUS "Could not find NumPy with FindPython, trying to find it with the numpy module instead.")
+    exec_program(${PYTHON_EXECUTABLE} ARGS "-c \"import numpy; print(numpy.get_include())\"" OUTPUT_VARIABLE Python_NumPy_INCLUDE_DIRS)
+    message(STATUS "Found NumPy include directory: ${Python_NumPy_INCLUDE_DIRS}")
+endif()
 
 # find LAPACK and BLAS (Use static linkage)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 
-# if we didn't find MKL
-# then search for OpenBLAS
+# search for openblas first
 set(BLA_VENDOR OpenBLAS)
 find_package(BLAS)
 
@@ -25,6 +31,7 @@ if(BLAS_FOUND)
 endif()
 
 # then search for everything else
+# NO GUARANTEE THAT THIS WILL WORK!
 if(NOT BLAS_FOUND)
     find_package(BLAS REQUIRED)
     find_package(LAPACK REQUIRED)
@@ -38,52 +45,21 @@ Python_add_library(
     WITH_SOABI
     src/_gsvd.c
 )
-target_link_libraries(
-    _gsvd
-    PRIVATE
-    Python::NumPy
-)
-
-# check if this is an mkl library
-# THIS IS CURRENTLY NOT WORKING
-if(BLAS_LIBRARIES MATCHES "(mkl)")
-    if(NOT DEFINED ENV{MKLROOT})
-        message(
-            FATAL_ERROR
-            "CMake detected MKL for a BLAS/LAPACK backend, but MKLROOT is undefined! \
-            Check that your MKL environment is setup correctly."
-        )
-    endif()
-
-    set(MKLROOT $ENV{MKLROOT})
-    set(MKL_INCLUDE_DIRECTORY ${MKLROOT}/include)
-    target_compile_definitions(
-        _gsvd
-        PRIVATE
-        USE_MKL
-    )
-    target_include_directories(
-        _gsvd
-        PRIVATE
-        ${MKL_INCLUDE_DIRECTORY}
-    )
-else()
-    target_compile_definitions(
-        _gsvd
-        PRIVATE
-        USE_LAPACK
-    )
-endif()
-
 target_include_directories(
     _gsvd
     PRIVATE
     ${LAPACKE_INCLUDE_DIRS}
+    ${Python_NumPy_INCLUDE_DIRS}
 )
 target_link_libraries(
     _gsvd
     PRIVATE
     ${LAPACKE_LIBRARIES}
+)
+target_compile_definitions(
+    _gsvd
+    PRIVATE
+    USE_LAPACK
 )
 
 # install library
